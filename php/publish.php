@@ -2,7 +2,7 @@
 /**
  * PX Commands "publish"
  */
-namespace picklesFramework2\commands;
+namespace tomk79\pickles2\publishForMultiDevice;
 
 /**
  * PX Commands "publish"
