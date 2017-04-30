@@ -179,7 +179,18 @@ return call_user_func( function(){
 		'picklesFramework2\commands\api::register' ,
 
 		// PX=publish
-		'tomk79\pickles2\publishForMultiDevice\publish::register' ,
+		'tomk79\pickles2\publishForMultiDevice\publish::register('.json_encode(array(
+			'devices'=>array(
+				array(
+					'user_agent'=>'iPhone',
+					'path_publish_dir'=>'./px-files/dist_smt/',
+				),
+				array(
+					'user_agent'=>'iPad',
+					'path_publish_dir'=>'./px-files/dist_tab/',
+				),
+			)
+		)).')' ,
 	);
 
 

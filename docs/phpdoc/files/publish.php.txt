@@ -74,6 +74,10 @@ class publish{
 		if( !is_array(@$json->paths_ignore) ){
 			$json->paths_ignore = array();
 		}
+		if( !is_array(@$json->devices) ){
+			// multi-device 拡張
+			$json->devices = array();
+		}
 		// var_dump($json);
 
 		$self = new self( $px, $json );
@@ -168,6 +172,12 @@ class publish{
 		print 'region: '.join(', ', $this->paths_region)."\n";
 		print 'ignore (tmp): '.join(', ', $this->paths_ignore)."\n";
 		print 'keep cache: '.($this->flg_keep_cache ? 'true' : 'false')."\n";
+		print 'devices:'."\n";
+		foreach($this->plugin_conf->devices as $key=>$device){
+			print '  - device['.$key.']:'."\n";
+			print '    - user_agent: '.$device->user_agent."\n";
+			print '    - path_publish_dir: '.$device->path_publish_dir."\n";
+		}
 		print '------------'."\n";
 		flush();
 		return ob_get_clean();
@@ -395,6 +405,21 @@ function cont_EditPublishTargetPathApply(formElm){
 		print $this->cli_report();
 		print "\n";
 
+		$device_list = $this->plugin_conf->devices;
+		foreach($device_list as $device_num => $device_info){
+			$device_list[$device_num]->user_agent = trim($device_info->user_agent).'/PicklesCrawler';
+			if($this->px->fs()->is_dir($device_info->path_publish_dir)){
+				$device_list[$device_num]->path_publish_dir = $this->px->fs()->get_realpath( $device_info->path_publish_dir );
+			}else{
+				$device_list[$device_num]->path_publish_dir = false;
+			}
+		}
+		array_push($device_list, json_decode(json_encode(array(
+			'user_agent' => '',
+			'path_publish_dir' => $this->path_publish_dir,
+		))));
+		// var_dump($device_list);
+
 		while(1){
 			set_time_limit(5*60);
 			flush();
@@ -404,127 +429,134 @@ function cont_EditPublishTargetPathApply(formElm){
 			foreach( $this->paths_queue as $path=>$val ){break;}
 			print '------------'."\n";
 			print $path."\n";
-			if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
-				// ディレクトリを処理
-				$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path );
-				print ' -> A directory.'."\n";
 
-			}else{
-				// ファイルを処理
-				$ext = strtolower( pathinfo( $path , PATHINFO_EXTENSION ) );
-				$proc_type = $this->px->get_path_proc_type( $path );
-				$status_code = null;
-				$status_message = null;
-				$errors = array();
-				$microtime = microtime(true);
-				switch( $proc_type ){
-					case 'pass':
-						// pass
-						print $ext.' -> '.$proc_type."\n";
-						if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path ) ) ){
-							$status_code = 500;
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to making parent directory.' ));
+			foreach($device_list as $device_num => $device_info){
+				// var_dump($device_info);
+
+				if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
+					// ディレクトリを処理
+					$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path );
+					print ' -> A directory.'."\n";
+
+				}else{
+					// ファイルを処理
+					$ext = strtolower( pathinfo( $path , PATHINFO_EXTENSION ) );
+					$proc_type = $this->px->get_path_proc_type( $path );
+					$status_code = null;
+					$status_message = null;
+					$errors = array();
+					$microtime = microtime(true);
+					switch( $proc_type ){
+						case 'pass':
+							// pass
+							print $ext.' -> '.$proc_type."\n";
+							if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ) ){
+								$status_code = 500;
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to making parent directory.' ));
+								break;
+							}
+							if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ){
+								$status_code = 500;
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to copying file.' ));
+								break;
+							}
+							$status_code = 200;
 							break;
-						}
-						if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path ) ){
-							$status_code = 500;
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to copying file.' ));
-							break;
-						}
-						$status_code = 200;
-						break;
 
-					case 'direct':
-					default:
-						// pickles execute
-						print $ext.' -> '.$proc_type."\n";
+						case 'direct':
+						default:
+							// pickles execute
+							print $ext.' -> '.$proc_type."\n";
 
-						$bin = $this->px->internal_sub_request( $path, array('output'=>'json'), $return_var );
-						if( !is_object($bin) ){
-							$bin = new \stdClass;
-							$bin->status = 500;
-							$tmp_err_msg = 'Unknown server error';
-							$tmp_err_msg .= "\n".'PHP returned status code "'.$return_var.'" on exit. There is a possibility of "Parse Error" or "Fatal Error" was occured.';
-							$tmp_err_msg .= "\n".'Hint: Normally, "Pickles 2" content files are parsed as PHP scripts. If you are using "<'.'?", "<'.'?php", "<'.'%", or "<'.'?=" unintentionally in contents, might be the cause.';
-							$bin->message = $tmp_err_msg;
-							$bin->errors = array();
-							// $bin->errors = array($tmp_err_msg);
-							$bin->relatedlinks = array();
-							$bin->body_base64 = base64_encode('');
-							// $bin->body_base64 = base64_encode($tmp_err_msg);
-							unset($tmp_err_msg);
-						}
-						$status_code = @$bin->status;
-						$status_message = @$bin->message;
-						$errors = @$bin->errors;
-						if( $bin->status >= 500 ){
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
-						}elseif( $bin->status >= 400 ){
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
-						}elseif( $bin->status >= 300 ){
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
-						}elseif( $bin->status >= 200 ){
-							// 200 番台は正常
-						}elseif( $bin->status >= 100 ){
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
-						}else{
-							$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'Unknown status code.' ));
-						}
-
-						// コンテンツの書き出し処理
-						// エラーが含まれている場合でも、得られたコンテンツを出力する。
-						$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path ) );
-						$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path, base64_decode( @$bin->body_base64 ) );
-						foreach( $bin->relatedlinks as $link ){
-							$link = $this->px->fs()->get_realpath( $link, dirname($this->path_docroot.$path).'/' );
-							$link = $this->px->fs()->normalize_path( $link );
-							$tmp_link = preg_replace( '/^'.preg_quote($this->px->get_path_controot(), '/').'/s', '/', $link );
-							if( $this->px->fs()->is_dir( $this->px->get_realpath_docroot().'/'.$link ) ){
-								$this->make_list_by_dir_scan( $tmp_link.'/' );
+							$bin = $this->px->internal_sub_request( $path, array('output'=>'json', 'user_agent'=>$device_info->user_agent), $return_var );
+							if( !is_object($bin) ){
+								$bin = new \stdClass;
+								$bin->status = 500;
+								$tmp_err_msg = 'Unknown server error';
+								$tmp_err_msg .= "\n".'PHP returned status code "'.$return_var.'" on exit. There is a possibility of "Parse Error" or "Fatal Error" was occured.';
+								$tmp_err_msg .= "\n".'Hint: Normally, "Pickles 2" content files are parsed as PHP scripts. If you are using "<'.'?", "<'.'?php", "<'.'%", or "<'.'?=" unintentionally in contents, might be the cause.';
+								$bin->message = $tmp_err_msg;
+								$bin->errors = array();
+								// $bin->errors = array($tmp_err_msg);
+								$bin->relatedlinks = array();
+								$bin->body_base64 = base64_encode('');
+								// $bin->body_base64 = base64_encode($tmp_err_msg);
+								unset($tmp_err_msg);
+							}
+							$status_code = @$bin->status;
+							$status_message = @$bin->message;
+							$errors = @$bin->errors;
+							if( $bin->status >= 500 ){
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
+							}elseif( $bin->status >= 400 ){
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
+							}elseif( $bin->status >= 300 ){
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
+							}elseif( $bin->status >= 200 ){
+								// 200 番台は正常
+							}elseif( $bin->status >= 100 ){
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'status: '.$bin->status.' '.$bin->message ));
 							}else{
-								$this->add_queue( $tmp_link );
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'Unknown status code.' ));
 							}
-						}
 
-						// エラーメッセージを alert_log に追記
-						if( is_array( $bin->errors ) && count( $bin->errors ) ){
-							foreach( $bin->errors as $tmp_error_row ){
-								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, $tmp_error_row ));
+							// コンテンツの書き出し処理
+							// エラーが含まれている場合でも、得られたコンテンツを出力する。
+							$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) );
+							$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path, base64_decode( @$bin->body_base64 ) );
+							foreach( $bin->relatedlinks as $link ){
+								$link = $this->px->fs()->get_realpath( $link, dirname($this->path_docroot.$path).'/' );
+								$link = $this->px->fs()->normalize_path( $link );
+								$tmp_link = preg_replace( '/^'.preg_quote($this->px->get_path_controot(), '/').'/s', '/', $link );
+								if( $this->px->fs()->is_dir( $this->px->get_realpath_docroot().'/'.$link ) ){
+									$this->make_list_by_dir_scan( $tmp_link.'/' );
+								}else{
+									$this->add_queue( $tmp_link );
+								}
 							}
-						}
 
-						break;
+							// エラーメッセージを alert_log に追記
+							if( is_array( $bin->errors ) && count( $bin->errors ) ){
+								foreach( $bin->errors as $tmp_error_row ){
+									$this->alert_log(array( @date('Y-m-d H:i:s'), $path, $tmp_error_row ));
+								}
+							}
+
+							break;
+					}
+
+					$str_errors = '';
+					if( is_array($errors) && count($errors) ){
+						$str_errors .= count($errors).' errors: ';
+						$str_errors .= implode(', ', $errors).';';
+					}
+					$this->log(array(
+						@date('Y-m-d H:i:s') ,
+						$path ,
+						$proc_type ,
+						$status_code ,
+						$status_message ,
+						$str_errors,
+						@filesize($this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path),
+						$device_info->user_agent,
+						microtime(true)-$microtime
+					));
+
 				}
 
-				$str_errors = '';
-				if( is_array($errors) && count($errors) ){
-					$str_errors .= count($errors).' errors: ';
-					$str_errors .= implode(', ', $errors).';';
+				if( !empty( $device_info->path_publish_dir ) ){
+					// パブリッシュ先ディレクトリに都度コピー
+					if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ){
+						$this->px->fs()->mkdir_r( dirname( $device_info->path_publish_dir.$this->path_docroot.$path ) );
+						$this->px->fs()->copy(
+							$this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ,
+							$device_info->path_publish_dir.$this->path_docroot.$path
+						);
+						print ' -> copied to publish dir'."\n";
+					}
 				}
-				$this->log(array(
-					@date('Y-m-d H:i:s') ,
-					$path ,
-					$proc_type ,
-					$status_code ,
-					$status_message ,
-					$str_errors,
-					@filesize($this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path),
-					microtime(true)-$microtime
-				));
 
-			}
-
-			if( !empty( $this->path_publish_dir ) ){
-				// パブリッシュ先ディレクトリに都度コピー
-				if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path ) ){
-					$this->px->fs()->mkdir_r( dirname( $this->path_publish_dir.$this->path_docroot.$path ) );
-					$this->px->fs()->copy(
-						$this->path_tmp_publish.'/htdocs'.$this->path_docroot.$path ,
-						$this->path_publish_dir.$this->path_docroot.$path
-					);
-					print ' -> copied to publish dir'."\n";
-				}
-			}
+			} // multi device
 
 			unset($this->paths_queue[$path]);
 			$this->paths_done[$path] = true;
@@ -544,13 +576,15 @@ function cont_EditPublishTargetPathApply(formElm){
 			print '============'."\n";
 			print '## Sync to publish directory.'."\n";
 			print "\n";
-			set_time_limit(30*60);
-			foreach( $this->paths_region as $path_region ){
-				$this->sync_dir(
-					$this->path_tmp_publish.'/htdocs'.$this->path_docroot ,
-					$this->path_publish_dir.$this->path_docroot ,
-					$path_region
-				);
+			foreach($device_list as $device_num => $device_info){
+				set_time_limit(30*60);
+				foreach( $this->paths_region as $path_region ){
+					$this->sync_dir(
+						$this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot ,
+						$device_info->path_publish_dir.$this->path_docroot ,
+						$path_region
+					);
+				}
 			}
 		}
 		print "\n";
@@ -749,6 +783,7 @@ function cont_EditPublishTargetPathApply(formElm){
 				'status_message' ,
 				'errors' ,
 				'filesize',
+				'user_agent',
 				'proc_microtime'
 			)) ), 3, $path_logfile );
 			clearstatcache();
