@@ -29,7 +29,6 @@ class mainTest extends PHPUnit_Framework_TestCase{
 
 		// var_dump($output);
 		$this->assertTrue( $this->common_error( $output ) );
-
 		$this->assertTrue( true );
 
 	}//testPing();
@@ -39,10 +38,10 @@ class mainTest extends PHPUnit_Framework_TestCase{
 	/**
 	 * publish
 	 */
-	public function testPublish(){
+	public function testPublishMultiDevice(){
 
 		// -------------------
-		// api.get.vertion
+		// Execute Multi Device Publish
 		$output = $this->passthru( [
 			'php',
 			__DIR__.'/testdata/standard/.px_execute.php' ,
@@ -53,9 +52,37 @@ class mainTest extends PHPUnit_Framework_TestCase{
 		// var_dump($output);
 		$this->assertTrue( $this->common_error( $output ) );
 
-		$this->assertTrue( true );
+		$this->assertTrue( is_dir( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs/' ) );
+		$this->assertTrue( is_dir( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_1/' ) );
+		$this->assertTrue( is_dir( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_2/' ) );
 
-	}//testPublish();
+		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs/index.html' ) );
+		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_1/index.html' ) );
+		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_2/index.html' ) );
+
+		$file = file_get_contents(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs/index.html');
+		$this->assertTrue( !!preg_match( '/<p>USER_AGENT: <\/p>/s', $file ) );
+
+		$file = file_get_contents(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_1/index.html');
+		$this->assertTrue( !!preg_match( '/<p>USER_AGENT: iPhone\/PicklesCrawler<\/p>/s', $file ) );
+
+		$file = file_get_contents(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_2/index.html');
+		$this->assertTrue( !!preg_match( '/<p>USER_AGENT: iPad\/PicklesCrawler<\/p>/s', $file ) );
+
+		$this->assertEquals(
+			md5_file(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs/index.html'),
+			md5_file(__DIR__.'/testdata/standard/px-files/dist/index.html')
+		);
+		$this->assertEquals(
+			md5_file(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_1/index.html'),
+			md5_file(__DIR__.'/testdata/standard/px-files/dist_smt/index.html')
+		);
+		$this->assertEquals(
+			md5_file(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs_2/index.html'),
+			md5_file(__DIR__.'/testdata/standard/px-files/dist_tab/index.html')
+		);
+
+	}//testPublishMultiDevice();
 
 
 
