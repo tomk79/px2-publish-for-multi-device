@@ -14,9 +14,9 @@ class mainTest extends PHPUnit_Framework_TestCase{
 
 
 	/**
-	 * test
+	 * Ping
 	 */
-	public function testMain(){
+	public function testPing(){
 
 		// -------------------
 		// api.get.vertion
@@ -32,16 +32,30 @@ class mainTest extends PHPUnit_Framework_TestCase{
 
 		$this->assertTrue( true );
 
+	}//testPing();
 
-		// 後始末
+
+
+	/**
+	 * publish
+	 */
+	public function testPublish(){
+
+		// -------------------
+		// api.get.vertion
 		$output = $this->passthru( [
-			'php', __DIR__.'/testdata/standard/.px_execute.php', '/?PX=clearcache'
+			'php',
+			__DIR__.'/testdata/standard/.px_execute.php' ,
+			'/?PX=publish.run' ,
 		] );
 		clearstatcache();
+
+		// var_dump($output);
 		$this->assertTrue( $this->common_error( $output ) );
-		$this->assertTrue( !is_dir( __DIR__.'/testdata/standard/caches/p/' ) );
-		$this->assertTrue( !is_dir( __DIR__.'/testdata/standard/px-files/_sys/ram/caches/sitemaps/' ) );
-	}//testMain();
+
+		$this->assertTrue( true );
+
+	}//testPublish();
 
 
 

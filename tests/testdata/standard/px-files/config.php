@@ -179,7 +179,7 @@ return call_user_func( function(){
 		'picklesFramework2\commands\api::register' ,
 
 		// PX=publish
-		'picklesFramework2\commands\publish::register' ,
+		'tomk79\pickles2\publishForMultiDevice\publish::register' ,
 	);
 
 
