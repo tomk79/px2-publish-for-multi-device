@@ -414,7 +414,7 @@ function cont_EditPublishTargetPathApply(formElm){
 				$device_list[$device_num]->path_publish_dir = false;
 			}
 		}
-		array_push($device_list, json_decode(json_encode(array(
+		array_unshift($device_list, json_decode(json_encode(array(
 			'user_agent' => '',
 			'path_publish_dir' => $this->path_publish_dir,
 		))));
@@ -432,10 +432,11 @@ function cont_EditPublishTargetPathApply(formElm){
 
 			foreach($device_list as $device_num => $device_info){
 				// var_dump($device_info);
+				$htdocs_sufix = ($device_num ? '_'.$device_num : '');
 
 				if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
 					// ディレクトリを処理
-					$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path );
+					$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path );
 					print ' -> A directory.'."\n";
 
 				}else{
@@ -450,12 +451,12 @@ function cont_EditPublishTargetPathApply(formElm){
 						case 'pass':
 							// pass
 							print $ext.' -> '.$proc_type."\n";
-							if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ) ){
+							if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ) ){
 								$status_code = 500;
 								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to making parent directory.' ));
 								break;
 							}
-							if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ){
+							if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ){
 								$status_code = 500;
 								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to copying file.' ));
 								break;
@@ -502,8 +503,8 @@ function cont_EditPublishTargetPathApply(formElm){
 
 							// コンテンツの書き出し処理
 							// エラーが含まれている場合でも、得られたコンテンツを出力する。
-							$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) );
-							$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path, base64_decode( @$bin->body_base64 ) );
+							$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) );
+							$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path, base64_decode( @$bin->body_base64 ) );
 							foreach( $bin->relatedlinks as $link ){
 								$link = $this->px->fs()->get_realpath( $link, dirname($this->path_docroot.$path).'/' );
 								$link = $this->px->fs()->normalize_path( $link );
@@ -537,7 +538,7 @@ function cont_EditPublishTargetPathApply(formElm){
 						$status_code ,
 						$status_message ,
 						$str_errors,
-						@filesize($this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path),
+						@filesize($this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path),
 						$device_info->user_agent,
 						microtime(true)-$microtime
 					));
@@ -546,10 +547,10 @@ function cont_EditPublishTargetPathApply(formElm){
 
 				if( !empty( $device_info->path_publish_dir ) ){
 					// パブリッシュ先ディレクトリに都度コピー
-					if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ) ){
+					if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ){
 						$this->px->fs()->mkdir_r( dirname( $device_info->path_publish_dir.$this->path_docroot.$path ) );
 						$this->px->fs()->copy(
-							$this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot.$path ,
+							$this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ,
 							$device_info->path_publish_dir.$this->path_docroot.$path
 						);
 						print ' -> copied to publish dir'."\n";
@@ -577,10 +578,11 @@ function cont_EditPublishTargetPathApply(formElm){
 			print '## Sync to publish directory.'."\n";
 			print "\n";
 			foreach($device_list as $device_num => $device_info){
+				$htdocs_sufix = ($device_num ? '_'.$device_num : '');
 				set_time_limit(30*60);
 				foreach( $this->paths_region as $path_region ){
 					$this->sync_dir(
-						$this->path_tmp_publish.'/htdocs'.$device_num.$this->path_docroot ,
+						$this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot ,
 						$device_info->path_publish_dir.$this->path_docroot ,
 						$path_region
 					);
