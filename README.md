@@ -91,10 +91,12 @@ $ php .px_execute.php /?PX=publish.run
 				array(
 					'user_agent'=>'iPhone', // USER_AGENT 文字列
 					'path_publish_dir'=>'./px-files/dist_smt/', // このデバイス向けのパブリッシュ先ディレクトリ
+					'path_rewrite_rule'=>'functionNameOf::rewrite_smt', // パスの書き換えロジック
 				),
 				array(
 					'user_agent'=>'iPad',
 					'path_publish_dir'=>'./px-files/dist_tab/',
+					'path_rewrite_rule'=>'functionNameOf::rewriter_tab',
 				),
 				/* ...以下同様... */
 			)

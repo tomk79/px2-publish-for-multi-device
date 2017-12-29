@@ -31,7 +31,8 @@
     },
     "autoload": {
         "files": [
-            "php/publish.php"
+            "php/publish.php",
+            "php/path_rewriter.php"
         ]
     }
 }

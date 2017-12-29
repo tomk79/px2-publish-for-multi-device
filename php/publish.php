@@ -24,6 +24,9 @@ class publish{
 	/** プラグイン設定 */
 	private $plugin_conf;
 
+	/** パス変換オブジェクト */
+	private $path_rewriter;
+
 	/** パス設定 */
 	private $path_tmp_publish, $path_publish_dir, $path_docroot;
 
@@ -93,6 +96,7 @@ class publish{
 	public function __construct( $px, $json ){
 		$this->px = $px;
 		$this->plugin_conf = $json;
+		$this->path_rewriter = new path_rewriter( $px, $this->plugin_conf );
 
 		$this->path_tmp_publish = $px->fs()->get_realpath( $px->get_realpath_homedir().'_sys/ram/publish/' );
 		$this->path_lockfile = $this->path_tmp_publish.'applock.txt';
@@ -413,10 +417,12 @@ function cont_EditPublishTargetPathApply(formElm){
 			}else{
 				$device_list[$device_num]->path_publish_dir = false;
 			}
+			$device_list[$device_num]->path_rewrite_rule = $this->path_rewriter->normalize_callback( @$device_list[$device_num]->path_rewrite_rule );
 		}
 		array_unshift($device_list, json_decode(json_encode(array(
 			'user_agent' => '',
 			'path_publish_dir' => $this->path_publish_dir,
+			'path_rewrite_rule' => $this->path_rewriter->normalize_callback(null)
 		))));
 		// var_dump($device_list);
 

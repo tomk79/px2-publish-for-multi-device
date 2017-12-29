@@ -3,6 +3,7 @@
  * config.php template
  */
 return call_user_func( function(){
+	require_once(__DIR__.'/php/testCallbackFncs.php');
 
 	// initialize
 
@@ -188,6 +189,7 @@ return call_user_func( function(){
 				array(
 					'user_agent'=>'iPad',
 					'path_publish_dir'=>'./px-files/dist_tab/',
+					'path_rewrite_rule'=>'testCallbackFncs::rewrite_tab',
 				),
 			)
 		)).')' ,
