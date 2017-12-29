@@ -185,6 +185,7 @@ return call_user_func( function(){
 				array(
 					'user_agent'=>'iPhone',
 					'path_publish_dir'=>'./px-files/dist_smt/',
+					'path_rewrite_rule'=>'{$dirname}/{$filename}.smt.{$ext}',
 				),
 				array(
 					'user_agent'=>'iPad',

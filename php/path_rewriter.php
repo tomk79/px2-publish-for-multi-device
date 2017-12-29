@@ -40,7 +40,39 @@ class path_rewriter{
 			// function で始まる文字列が設定された場合
 			return eval('return '.$this->conf->path_files.';');
 		}
+		if( is_null($callback) ){
+			// コールバック関数が設定されなかった場合
+			return null;
+		}
 		return $callback;
 	}//normalize_callback()
+
+	/**
+	 * パスを変換する
+	 * @param  string $path     変換前のパス
+	 * @param  mixed  $callback コールバック関数 または 変換ルール文字列
+	 * @return [type]           変換後のパス
+	 */
+	public function rewrite($path, $callback){
+		if( is_null($callback) ){
+			// コールバック関数が設定されなかった場合
+			return $path;
+		}elseif( is_callable($callback) ){
+			// コールバック関数が設定された場合
+			return call_user_func( $callback, $path );
+		}elseif( is_string($callback) ){
+			$path_rewrited = $callback;
+			$data = array(
+				'dirname'=>$this->px->fs()->normalize_path(dirname($path)),
+				'filename'=>basename($this->px->fs()->trim_extension($path)),
+				'ext'=>strtolower($this->px->fs()->get_extension($path)),
+			);
+			$path_rewrited = str_replace( '{$dirname}', $data['dirname'], $path_rewrited );
+			$path_rewrited = str_replace( '{$filename}', $data['filename'], $path_rewrited );
+			$path_rewrited = str_replace( '{$ext}', $data['ext'], $path_rewrited );
+			return $path_rewrited;
+		}
+		return $path;
+	}
 
 }

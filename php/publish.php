@@ -422,7 +422,7 @@ function cont_EditPublishTargetPathApply(formElm){
 		array_unshift($device_list, json_decode(json_encode(array(
 			'user_agent' => '',
 			'path_publish_dir' => $this->path_publish_dir,
-			'path_rewrite_rule' => $this->path_rewriter->normalize_callback(null)
+			'path_rewrite_rule' => $this->path_rewriter->normalize_callback(null),
 		))));
 		// var_dump($device_list);
 
@@ -439,10 +439,11 @@ function cont_EditPublishTargetPathApply(formElm){
 			foreach($device_list as $device_num => $device_info){
 				// var_dump($device_info);
 				$htdocs_sufix = ($device_num ? '_'.$device_num : '');
+				$path_rewrited = $this->path_rewriter->rewrite($path, $device_info->path_rewrite_rule);
 
 				if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
 					// ディレクトリを処理
-					$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path );
+					$this->px->fs()->mkdir( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited );
 					print ' -> A directory.'."\n";
 
 				}else{
@@ -457,14 +458,14 @@ function cont_EditPublishTargetPathApply(formElm){
 						case 'pass':
 							// pass
 							print $ext.' -> '.$proc_type."\n";
-							if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ) ){
+							if( !$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited ) ) ){
 								$status_code = 500;
-								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to making parent directory.' ));
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path_rewrited, 'FAILED to making parent directory.' ));
 								break;
 							}
-							if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ){
+							if( !$this->px->fs()->copy( dirname($_SERVER['SCRIPT_FILENAME']).$path , $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited ) ){
 								$status_code = 500;
-								$this->alert_log(array( @date('Y-m-d H:i:s'), $path, 'FAILED to copying file.' ));
+								$this->alert_log(array( @date('Y-m-d H:i:s'), $path_rewrited, 'FAILED to copying file.' ));
 								break;
 							}
 							$status_code = 200;
@@ -509,8 +510,8 @@ function cont_EditPublishTargetPathApply(formElm){
 
 							// コンテンツの書き出し処理
 							// エラーが含まれている場合でも、得られたコンテンツを出力する。
-							$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) );
-							$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path, base64_decode( @$bin->body_base64 ) );
+							$this->px->fs()->mkdir_r( dirname( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited ) );
+							$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited, base64_decode( @$bin->body_base64 ) );
 							foreach( $bin->relatedlinks as $link ){
 								$link = $this->px->fs()->get_realpath( $link, dirname($this->path_docroot.$path).'/' );
 								$link = $this->px->fs()->normalize_path( $link );
@@ -553,11 +554,11 @@ function cont_EditPublishTargetPathApply(formElm){
 
 				if( !empty( $device_info->path_publish_dir ) ){
 					// パブリッシュ先ディレクトリに都度コピー
-					if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ) ){
-						$this->px->fs()->mkdir_r( dirname( $device_info->path_publish_dir.$this->path_docroot.$path ) );
+					if( $this->px->fs()->is_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited ) ){
+						$this->px->fs()->mkdir_r( dirname( $device_info->path_publish_dir.$this->path_docroot.$path_rewrited ) );
 						$this->px->fs()->copy(
-							$this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path ,
-							$device_info->path_publish_dir.$this->path_docroot.$path
+							$this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited ,
+							$device_info->path_publish_dir.$this->path_docroot.$path_rewrited
 						);
 						print ' -> copied to publish dir'."\n";
 					}
