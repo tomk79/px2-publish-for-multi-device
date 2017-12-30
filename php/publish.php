@@ -27,6 +27,9 @@ class publish{
 	/** パス変換オブジェクト */
 	private $path_rewriter;
 
+	/** 一時パブリッシュディレクトリ管理オブジェクト */
+	private $tmp_publish_dir;
+
 	/** パス設定 */
 	private $path_tmp_publish, $path_publish_dir, $path_docroot;
 
@@ -97,6 +100,7 @@ class publish{
 		$this->px = $px;
 		$this->plugin_conf = $json;
 		$this->path_rewriter = new path_rewriter( $px, $this->plugin_conf );
+		$this->tmp_publish_dir = new tmp_publish_dir( $px, $this->plugin_conf );
 
 		$this->path_tmp_publish = $px->fs()->get_realpath( $px->get_realpath_homedir().'_sys/ram/publish/' );
 		$this->path_lockfile = $this->path_tmp_publish.'applock.txt';
@@ -438,7 +442,8 @@ function cont_EditPublishTargetPathApply(formElm){
 
 			foreach($device_list as $device_num => $device_info){
 				// var_dump($device_info);
-				$htdocs_sufix = ($device_num ? '_'.$device_num : '');
+				$htdocs_sufix = $this->tmp_publish_dir->get_sufix( $device_info->path_publish_dir );
+var_dump($htdocs_sufix);
 				$path_rewrited = $this->path_rewriter->rewrite($path, $device_info->path_rewrite_rule);
 
 				if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
@@ -584,13 +589,14 @@ function cont_EditPublishTargetPathApply(formElm){
 			print '============'."\n";
 			print '## Sync to publish directory.'."\n";
 			print "\n";
-			foreach($device_list as $device_num => $device_info){
-				$htdocs_sufix = ($device_num ? '_'.$device_num : '');
+			$publish_dir_list = $this->tmp_publish_dir->get_publish_dir_list();
+			foreach($publish_dir_list as $path_publish_dir => $publish_dir_idx){
+				$htdocs_sufix = $publish_dir_idx;
 				set_time_limit(30*60);
 				foreach( $this->paths_region as $path_region ){
 					$this->sync_dir(
 						$this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot ,
-						$device_info->path_publish_dir.$this->path_docroot ,
+						$path_publish_dir.$this->path_docroot ,
 						$path_region
 					);
 				}

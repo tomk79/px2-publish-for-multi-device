@@ -188,6 +188,11 @@ return call_user_func( function(){
 					'path_rewrite_rule'=>'{$dirname}/{$filename}.smt.{$ext}',
 				),
 				array(
+					'user_agent'=>'iPhone2',
+					'path_publish_dir'=>'./px-files/dist/',
+					'path_rewrite_rule'=>'{$dirname}/{$filename}.smt2.{$ext}',
+				),
+				array(
 					'user_agent'=>'iPad',
 					'path_publish_dir'=>'./px-files/dist_tab/',
 					'path_rewrite_rule'=>'testCallbackFncs::rewrite_tab',

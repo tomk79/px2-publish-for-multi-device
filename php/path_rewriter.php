@@ -1,6 +1,6 @@
 <?php
 /**
- * PX Commands "publish"
+ * PX Commands "publish" path rewriter
  */
 namespace tomk79\pickles2\publishForMultiDevice;
 

@@ -32,7 +32,8 @@
     "autoload": {
         "files": [
             "php/publish.php",
-            "php/path_rewriter.php"
+            "php/path_rewriter.php",
+            "php/tmp_publish_dir.php"
         ]
     }
 }
