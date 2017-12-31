@@ -58,8 +58,12 @@ class mainTest extends PHPUnit_Framework_TestCase{
 
 		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs0/index.html' ) );
 		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs0/index.smt2.html' ) );
+		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs0/default_only/default.html' ) );
+		$this->assertFalse( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs0/default_only/default.smt2.html' ) );
 		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs1/index.smt.html' ) );
+		$this->assertFalse( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs1/default_only/default.smt.html' ) );
 		$this->assertTrue( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs2/_tab/index.html' ) );
+		$this->assertFalse( is_file( __DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs2/_tab/default_only/default.html' ) );
 
 		$file = file_get_contents(__DIR__.'/testdata/standard/px-files/_sys/ram/publish/htdocs0/index.html');
 		$this->assertTrue( !!preg_match( '/<p>USER_AGENT: <\/p>/s', $file ) );

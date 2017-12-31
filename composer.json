@@ -31,8 +31,9 @@
     },
     "autoload": {
         "files": [
-            "php/publish.php",
+            "php/device_target_path.php",
             "php/path_rewriter.php",
+            "php/publish.php",
             "php/tmp_publish_dir.php"
         ]
     }

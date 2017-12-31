@@ -30,6 +30,9 @@ class publish{
 	/** 一時パブリッシュディレクトリ管理オブジェクト */
 	private $tmp_publish_dir;
 
+	/** デバイス毎の対象パスを評価するオブジェクト */
+	private $device_target_path;
+
 	/** パス設定 */
 	private $path_tmp_publish, $path_publish_dir, $path_docroot;
 
@@ -101,6 +104,7 @@ class publish{
 		$this->plugin_conf = $json;
 		$this->path_rewriter = new path_rewriter( $px, $this->plugin_conf );
 		$this->tmp_publish_dir = new tmp_publish_dir( $px, $this->plugin_conf );
+		$this->device_target_path = new device_target_path( $px, $this->plugin_conf );
 
 		$this->path_tmp_publish = $px->fs()->get_realpath( $px->get_realpath_homedir().'_sys/ram/publish/' );
 		$this->path_lockfile = $this->path_tmp_publish.'applock.txt';
@@ -443,8 +447,14 @@ function cont_EditPublishTargetPathApply(formElm){
 			foreach($device_list as $device_num => $device_info){
 				// var_dump($device_info);
 				$htdocs_sufix = $this->tmp_publish_dir->get_sufix( $device_info->path_publish_dir );
-var_dump($htdocs_sufix);
 				$path_rewrited = $this->path_rewriter->rewrite($path, $device_info->path_rewrite_rule);
+				$is_device_target_path = $this->device_target_path->is_target_path( $path, $device_info );
+
+				if( !$is_device_target_path ){
+					// デバイス設定で対象外と判定された場合、スキップ
+					print ' -> Skipped.'."\n";
+					continue;
+				}
 
 				if( $this->px->fs()->is_dir(dirname($_SERVER['SCRIPT_FILENAME']).$path) ){
 					// ディレクトリを処理
