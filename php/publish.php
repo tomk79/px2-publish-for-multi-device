@@ -560,7 +560,7 @@ function cont_EditPublishTargetPathApply(formElm){
 						$status_code ,
 						$status_message ,
 						$str_errors,
-						@filesize($this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path),
+						@filesize($this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited),
 						$device_info->user_agent,
 						microtime(true)-$microtime
 					));
