@@ -32,9 +32,11 @@
     "autoload": {
         "files": [
             "php/device_target_path.php",
+            "php/path_resolver.php",
             "php/path_rewriter.php",
             "php/publish.php",
-            "php/tmp_publish_dir.php"
+            "php/tmp_publish_dir.php",
+            "php/simple_html_dom.php"
         ]
     }
 }
