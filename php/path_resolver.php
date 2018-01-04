@@ -188,6 +188,12 @@ class path_resolver{
 			return $path;
 		}
 
+		$params = '';
+		if( preg_match( '/^(.*?)([\?\#].*)$/', $path, $matched ) ){
+			$path = $matched[1];
+			$params = $matched[2];
+		}
+
 		$rewrite_direction = @$this->device_info->rewrite_direction;
 		@preg_match('/^(.*)2(.*)$/', $rewrite_direction, $matched);
 		$rewrite_from = $matched[1];
@@ -250,6 +256,10 @@ class path_resolver{
 		}
 
 		$realpath_to = $this->px->fs()->normalize_path($realpath_to);
+		if( $is_slash_closed ){
+			$realpath_to = preg_replace( '/'.$this->px->get_directory_index_preg_pattern().'$/', '', $realpath_to );
+		}
+		$realpath_to .= $params;
 
 		return $realpath_to;
 	}
