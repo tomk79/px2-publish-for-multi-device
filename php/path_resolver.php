@@ -15,19 +15,30 @@ class path_resolver{
 	/** プラグイン設定 */
 	private $plugin_conf;
 
+	/** パス変換オブジェクト */
+	private $path_rewriter;
+
+	/** 端末設定 */
+	private $device_info;
+
 	/** 対象ファイルのパス情報 */
 	private $path_original, $path_rewrited;
+
 
 	/**
 	 * constructor
 	 * @param object $px Picklesオブジェクト
 	 * @param object $json プラグイン設定
+	 * @param object $path_rewriter パス変換オブジェクト
+	 * @param object $device_info 端末設定
 	 * @param string $path_original 変換前のパス
 	 * @param string $path_rewrited 変換後のパス
 	 */
-	public function __construct( $px, $json, $path_original, $path_rewrited ){
+	public function __construct( $px, $json, $path_rewriter, $device_info, $path_original, $path_rewrited ){
 		$this->px = $px;
 		$this->plugin_conf = $json;
+		$this->path_rewriter = $path_rewriter;
+		$this->device_info = $device_info;
 		$this->path_original = $path_original;
 		$this->path_rewrited = $path_rewrited;
 	}
@@ -177,38 +188,70 @@ class path_resolver{
 			return $path;
 		}
 
+		$rewrite_direction = @$this->device_info->rewrite_direction;
+		@preg_match('/^(.*)2(.*)$/', $rewrite_direction, $matched);
+		$rewrite_from = $matched[1];
+		$rewrite_to   = $matched[2];
+		if( !strlen($rewrite_from) ){
+			$rewrite_from = 'rewrited';
+		}
+		if( !strlen($rewrite_to) ){
+			$rewrite_to = 'origin';
+		}
+
 		$type = 'relative';
 		if( preg_match('/^\//', $path) ){
 			$type = 'absolute';
 		}elseif( preg_match('/^\.\//', $path) ){
 			$type = 'relative_dotslash';
 		}
-
-		$cd = $this->px->fs()->get_realpath( $this->path_original );
-		$cd = preg_replace( '/^(.*)(\/.*?)$/si', '$1', $cd );
-		if( !strlen($cd) ){
-			$cd = '/';
+		$is_slash_closed = false;
+		if( preg_match('/\/$/', $path) ){
+			$is_slash_closed = true;
+			$path .= $this->px->get_directory_index_primary();
 		}
-		$path = $this->px->fs()->get_realpath($path, $cd);
+
+		// ------------------
+
+		$cd_origin = $this->px->fs()->get_realpath( $this->path_original );
+		$cd_origin = preg_replace( '/^(.*)(\/.*?)$/si', '$1', $cd_origin );
+		if( !strlen($cd_origin) ){
+			$cd_origin = '/';
+		}
+
+		$cd_rewrited = $this->px->fs()->get_realpath( $this->path_rewrited );
+		$cd_rewrited = preg_replace( '/^(.*)(\/.*?)$/si', '$1', $cd_rewrited );
+		if( !strlen($cd_rewrited) ){
+			$cd_rewrited = '/';
+		}
+
+		// ------------------
+
+		$realpath_from = $cd_origin;
+		$realpath_to = $this->px->fs()->normalize_path($this->px->fs()->get_realpath($path, $cd_origin));
+
+		if( $rewrite_from == 'rewrited' ){
+			$realpath_from = $cd_rewrited;
+		}
+		if( $rewrite_to == 'rewrited' ){
+			$realpath_to = $this->path_rewriter->rewrite($realpath_to, $this->device_info->path_rewrite_rule);
+			$realpath_to = $this->px->fs()->normalize_path($this->px->fs()->get_realpath($realpath_to, $cd_origin));
+		}
+
+		// ------------------
 
 		if( $type == 'relative' || $type == 'relative_dotslash' ){
-			$cd_rewrited = $this->px->fs()->get_realpath( $this->path_rewrited );
-			$cd_rewrited = preg_replace( '/^(.*)(\/.*?)$/si', '$1', $cd_rewrited );
-			if( !strlen($cd_rewrited) ){
-				$cd_rewrited = '/';
-			}
-
-			$path = $this->px->fs()->get_relatedpath($path, $cd_rewrited);
+			$realpath_to = $this->px->fs()->get_relatedpath($realpath_to, $realpath_from);
 			if( $type == 'relative' ){
-				$path = preg_replace( '/^\.\//si', '', $path );
+				$realpath_to = preg_replace( '/^\.\//si', '', $realpath_to );
 			}elseif( $type == 'relative_dotslash' ){
-				$path = preg_replace( '/^(\.\/)?/si', './', $path );
+				$realpath_to = preg_replace( '/^(\.\/)?/si', './', $realpath_to );
 			}
 		}
 
-		$path = $this->px->fs()->normalize_path($path);
+		$realpath_to = $this->px->fs()->normalize_path($realpath_to);
 
-		return $path;
+		return $realpath_to;
 	}
 
 }

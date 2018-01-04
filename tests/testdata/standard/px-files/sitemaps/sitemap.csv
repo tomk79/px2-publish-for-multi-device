@@ -1,3 +1,6 @@
 "* path","* content","* id","* title","* title_breadcrumb","* title_h1","* title_label","* title_full","* logical_path","* list_flg","* layout","* orderby","* keywords","* description","* category_top_flg","* role","* **delete_flg"
 "/index.html",,,"ホーム",,,,,,1,,,,,,,
 "/default_only/default.html",,,"デフォルトデバイスのみ",,,,,,1,,,,,,,
+"/sample_pages/index.html",,,"Sample Pages",,,,,,1,,,,,,,
+"/sample_pages/sample1.html",,,"Sample 1",,,,,,1,,,,,,,
+"/sample_pages/sample2.html",,,"Sample 2",,,,,,1,,,,,,,

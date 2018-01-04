@@ -200,6 +200,7 @@ return call_user_func( function(){
 					'paths_ignore'=>array(
 						'/default_only/*',
 					),
+					'rewrite_direction'=>'rewrited2rewrited',
 				),
 				array(
 					'user_agent'=>'iPad',
@@ -208,6 +209,7 @@ return call_user_func( function(){
 					'paths_ignore'=>array(
 						'/default_only/*',
 					),
+					'rewrite_direction'=>'rewrited2rewrited',
 				),
 			)
 		)).')' ,

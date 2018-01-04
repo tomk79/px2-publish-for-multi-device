@@ -548,10 +548,12 @@ function cont_EditPublishTargetPathApply(formElm){
 							break;
 					}
 
+					// パスの書き換え
 					$src = $this->px->fs()->read_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited );
-					$path_resolver = new path_resolver( $this->px, $this->plugin_conf, $path, $path_rewrited );
+					$path_resolver = new path_resolver( $this->px, $this->plugin_conf, $this->path_rewriter, $device_info, $path, $path_rewrited );
 					$src = $path_resolver->resolve($src);
 					$this->px->fs()->save_file( $this->path_tmp_publish.'/htdocs'.$htdocs_sufix.$this->path_docroot.$path_rewrited, $src );
+					// / パスの書き換え
 
 					$str_errors = '';
 					if( is_array($errors) && count($errors) ){
