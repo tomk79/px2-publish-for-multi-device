@@ -447,6 +447,7 @@ function cont_EditPublishTargetPathApply(formElm){
 			foreach($device_list as $device_num => $device_info){
 				// var_dump($device_info);
 				$htdocs_sufix = $this->tmp_publish_dir->get_sufix( $device_info->path_publish_dir );
+				if(!$htdocs_sufix){ $htdocs_sufix = '';}
 				$path_rewrited = $this->path_rewriter->rewrite($path, $device_info->path_rewrite_rule);
 				$is_device_target_path = $this->device_target_path->is_target_path( $path, $device_info );
 
@@ -609,6 +610,7 @@ function cont_EditPublishTargetPathApply(formElm){
 			$publish_dir_list = $this->tmp_publish_dir->get_publish_dir_list();
 			foreach($publish_dir_list as $path_publish_dir => $publish_dir_idx){
 				$htdocs_sufix = $publish_dir_idx;
+				if(!$htdocs_sufix){ $htdocs_sufix = '';}
 				set_time_limit(30*60);
 				foreach( $this->paths_region as $path_region ){
 					$this->sync_dir(
