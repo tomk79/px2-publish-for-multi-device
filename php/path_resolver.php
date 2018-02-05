@@ -196,8 +196,8 @@ class path_resolver{
 
 		$rewrite_direction = @$this->device_info->rewrite_direction;
 		@preg_match('/^(.*)2(.*)$/', $rewrite_direction, $matched);
-		$rewrite_from = $matched[1];
-		$rewrite_to   = $matched[2];
+		$rewrite_from = @$matched[1];
+		$rewrite_to   = @$matched[2];
 		if( !strlen($rewrite_from) ){
 			$rewrite_from = 'rewrited';
 		}
