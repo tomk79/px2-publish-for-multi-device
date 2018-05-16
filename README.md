@@ -107,7 +107,15 @@ $ php .px_execute.php /?PX=publish.run
 
 ## 更新履歴 - Change log
 
-### tomk79/px2-publish-for-multi-device dev-develop (2017年??月??日)
+### tomk79/px2-publish-for-multi-device 0.1.2 (リリース日未定)
+
+- 特殊なURL(`javascript:`、`data:` など)をパブリッシュしようとしてエラーになる不具合を修正。 (`pickles2/px-fw-2.x` からのマージ)
+
+### tomk79/px2-publish-for-multi-device 0.1.1 (2018年2月5日)
+
+- `rewrite_direction` の設定がない場合に Notice レベルエラーが発生する問題を修正。
+
+### tomk79/px2-publish-for-multi-device 0.1.0 (2018年1月22日)
 
 - First release.
 
