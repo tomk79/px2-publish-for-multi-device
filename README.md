@@ -5,20 +5,14 @@
 
 ## 導入手順 - Setup
 
-### 1. composer.json に tomk79/px2-publish-for-multi-device を追加
+### 1. `composer.json` に `tomk79/px2-publish-for-multi-device` を追加
 
-require の項目に、"tomk79/px2-publish-for-multi-device" を追加します。
+require の項目に、`tomk79/px2-publish-for-multi-device` を追加します。
 
 ```json
 {
-	"repositories": [
-		{
-			"type": "git",
-			"url": "https://github.com/tomk79/px2-publish-for-multi-device.git"
-		}
-	],
 	"require": {
-		"tomk79/px2-publish-for-multi-device": "dev-master"
+		"tomk79/px2-publish-for-multi-device": "^0.1"
 	},
 }
 ```
@@ -31,7 +25,7 @@ $ composer update
 ```
 
 
-### 2. config.php に、プラグインを設定
+### 2. `config.php` に、プラグインを設定
 
 設定ファイル config.php (通常は `./px-files/config.php`) を編集します。
 `before_content` にある、PX=publish の設定を、次の例を参考に書き換えます。
